@@ -1,0 +1,839 @@
+{
+  "name": "SemanticModel",
+  "compatibilityLevel": 1500,
+  "model": {
+    "culture": "en-US",
+    "dataSources": [
+      {
+        "type": "structured",
+        "name": "Excel Workbook_BikeShopSales",
+        "connectionDetails": {
+          "protocol": "file",
+          "address": {
+            "path": "C:\\Users\\tuko3\\OneDrive\\Documents\\Job Stuff\\P3 Adaptive Simulation\\P3 Simulated Consulting Project.xlsx"
+          },
+          "authentication": null,
+          "query": null
+        },
+        "credential": {
+          "AuthenticationKind": "ServiceAccount"
+        },
+        "contextExpression": [
+          "let",
+          "    #\"0001\" = Excel.Workbook(..., null, true)",
+          "in",
+          "    #\"0001\""
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "name": "Sales",
+        "columns": [
+          {
+            "name": "ProductKey",
+            "dataType": "string",
+            "sourceColumn": "ProductKey"
+          },
+          {
+            "name": "OrderDate",
+            "dataType": "dateTime",
+            "sourceColumn": "OrderDate",
+            "formatString": "Short Date",
+            "annotations": [
+              {
+                "name": "Format",
+                "value": "<Format Format=\"DateTimeShortDatePattern\" />"
+              }
+            ]
+          },
+          {
+            "name": "CustomerKey",
+            "dataType": "string",
+            "sourceColumn": "CustomerKey"
+          },
+          {
+            "name": "SalesTerritoryKey",
+            "dataType": "string",
+            "sourceColumn": "SalesTerritoryKey"
+          },
+          {
+            "name": "SalesOrderNumber",
+            "dataType": "string",
+            "sourceColumn": "SalesOrderNumber"
+          },
+          {
+            "name": "SalesOrderLineNumber",
+            "dataType": "string",
+            "sourceColumn": "SalesOrderLineNumber"
+          },
+          {
+            "name": "OrderQuantity",
+            "dataType": "int64",
+            "sourceColumn": "OrderQuantity"
+          },
+          {
+            "name": "DiscountAmount",
+            "dataType": "int64",
+            "sourceColumn": "DiscountAmount"
+          },
+          {
+            "name": "ProductStandardCost",
+            "dataType": "decimal",
+            "sourceColumn": "ProductStandardCost"
+          },
+          {
+            "name": "SalesAmount",
+            "dataType": "decimal",
+            "sourceColumn": "SalesAmount"
+          },
+          {
+            "name": "Territories.Region",
+            "dataType": "string",
+            "sourceColumn": "Territories.Region"
+          },
+          {
+            "name": "Territories.Country",
+            "dataType": "string",
+            "sourceColumn": "Territories.Country"
+          },
+          {
+            "name": "Territories.Continent",
+            "dataType": "string",
+            "sourceColumn": "Territories.Continent"
+          },
+          {
+            "name": "SalesOrderKey",
+            "dataType": "string",
+            "sourceColumn": "SalesOrderKey"
+          },
+          {
+            "type": "calculated",
+            "name": "FirstPurchDate",
+            "dataType": "dateTime",
+            "isDataTypeInferred": true,
+            "expression": [
+              "CALCULATE(",
+              "\tMIN(Sales[OrderDate]),",
+              "\tALLEXCEPT(Sales,Sales[CustomerKey])",
+              ")"
+            ],
+            "formatString": "Short Date",
+            "annotations": [
+              {
+                "name": "Format",
+                "value": "<Format Format=\"DateTimeShortDatePattern\" />"
+              }
+            ]
+          },
+          {
+            "type": "calculated",
+            "name": "Profit",
+            "dataType": "decimal",
+            "isDataTypeInferred": true,
+            "expression": "Sales[SalesAmount]-Sales[ProductStandardCost]",
+            "formatString": "\\$#,0.00;(\\$#,0.00);\\$#,0.00",
+            "annotations": [
+              {
+                "name": "Format",
+                "value": "<Format Format=\"Currency\" Accuracy=\"2\" ThousandSeparator=\"True\"><Currency LCID=\"1033\" DisplayName=\"$ English (United States)\" Symbol=\"$\" PositivePattern=\"0\" NegativePattern=\"0\" /></Format>"
+              }
+            ]
+          },
+          {
+            "type": "calculated",
+            "name": "Days Since Last Purchase",
+            "dataType": "int64",
+            "isDataTypeInferred": true,
+            "expression": [
+              "",
+              "VAR PrevPurchase=",
+              "\tCALCULATE(",
+              "\t\tMAX(Sales[OrderDate]),",
+              "\t\tFILTER(",
+              "\t\tSales,",
+              "\t\tSales[CustomerKey]=EARLIER(Sales[CustomerKey]) &&",
+              "\t\tSales[OrderDate] < EARLIER(Sales[OrderDate])",
+              "\t)",
+              ")",
+              "RETURN",
+              "\tIF(",
+              "\t\tISBLANK(PrevPurchase),",
+              "\t\tBLANK(),",
+              "\t\tDATEDIFF(PrevPurchase,Sales[OrderDate],DAY)",
+              "\t)"
+            ]
+          },
+          {
+            "type": "calculated",
+            "name": "Order Count_c",
+            "dataType": "int64",
+            "isDataTypeInferred": true,
+            "expression": [
+              "CALCULATE(",
+              "\tCOUNTROWS(Sales),",
+              "\tFILTER(",
+              "\tSales,",
+              "\tSales[CustomerKey]=EARLIER(Sales[CustomerKey])",
+              "\t)",
+              ")"
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"File/C:\\Users\\tjturner\\OneDrive - Intel Corporation\\Desktop\\Test Project\\P3 Simu\",",
+                "    Sales_Table = Source{[Item=\"Sales\",Kind=\"Table\"]}[Data],",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(Sales_Table,{{\"ProductKey\", type text}, {\"OrderDate\", type date}, {\"CustomerKey\", type text}, {\"SalesTerritoryKey\", type text}, {\"SalesOrderNumber\", type text}, {\"SalesOrderLineNumber\", type text}, {\"OrderQuantity\", Int64.Type}, {\"DiscountAmount\", Int64.Type}, {\"ProductStandardCost\", Currency.Type}, {\"SalesAmount\", Currency.Type}, {\"Territories.Region\", type text}, {\"Territories.Country\", type text}, {\"Territories.Continent\", type text}}),",
+                "    #\"Added Custom\" = Table.AddColumn(#\"Changed Type\", \"SalesOrderKey\", each [SalesOrderNumber]&\"-\"&[SalesOrderLineNumber]),",
+                "    #\"Removed Duplicates\" = Table.Distinct(#\"Added Custom\", {\"SalesOrderKey\"}),",
+                "    #\"Changed Type1\" = Table.TransformColumnTypes(#\"Removed Duplicates\",{{\"SalesOrderKey\", type text}})",
+                "in",
+                "    #\"Changed Type1\""
+              ]
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "Customers Per Month",
+            "expression": [
+              " ",
+              "CALCULATE(",
+              "    DISTINCTCOUNT(Sales[CustomerKey]),",
+              "    FILTER(",
+              "        Sales,",
+              "        Sales[OrderDate] >= MIN(Calendar[Date]) &&",
+              "        Sales[OrderDate] <= MAX(Calendar[Date])",
+              "    )",
+              ")"
+            ],
+            "formatString": "#,0"
+          },
+          {
+            "name": "Returned Within 90 Days",
+            "expression": [
+              " ",
+              "CALCULATE(",
+              "    DISTINCTCOUNT(Sales[CustomerKey]),",
+              "    FILTER(",
+              "        Sales,",
+              "        Sales[OrderDate] > Sales[FirstPurchDate] &&",
+              "        Sales[OrderDate] <= Sales[FirstPurchDate] + 90",
+              "    )",
+              ")"
+            ],
+            "formatString": "#,0"
+          },
+          {
+            "name": "Percent Returned Within 90 Days",
+            "expression": [
+              " ",
+              "DIVIDE([Returned Within 90 Days], [Customers Per Month])"
+            ],
+            "formatString": "0%;-0%;0%"
+          },
+          {
+            "name": "Returned Within Following 3 Months",
+            "expression": [
+              " ",
+              "CALCULATE(",
+              "    DISTINCTCOUNT(Sales[CustomerKey]),",
+              "    FILTER(",
+              "        Sales,",
+              "        Sales[OrderDate] > Sales[FirstPurchDate] + 90 &&",
+              "        Sales[OrderDate] <= Sales[FirstPurchDate] + 180",
+              "    )",
+              ")"
+            ]
+          },
+          {
+            "name": "Percent Returned Within Following 3 Months",
+            "expression": [
+              " ",
+              "DIVIDE([Returned Within Following 3 Months], [Customers Per Month])"
+            ],
+            "formatString": "0%;-0%;0%"
+          },
+          {
+            "name": "Average Order Value (AOV)",
+            "expression": [
+              " ",
+              "DIVIDE(SUM(Sales[SalesAmount]), COUNT(Sales[SalesOrderKey]))"
+            ],
+            "formatString": "\\$#,0.00;(\\$#,0.00);\\$#,0.00",
+            "annotations": [
+              {
+                "name": "Format",
+                "value": "<Format Format=\"Currency\" Accuracy=\"2\"><Currency LCID=\"1033\" DisplayName=\"$ English (United States)\" Symbol=\"$\" PositivePattern=\"0\" NegativePattern=\"0\" /></Format>"
+              }
+            ]
+          },
+          {
+            "name": "Sales Growth Rate",
+            "expression": [
+              " ",
+              "DIVIDE(",
+              "    SUM(Sales[SalesAmount]) - CALCULATE(SUM(Sales[SalesAmount]), DATEADD(Calendar[Date], -1, MONTH)),",
+              "    CALCULATE(SUM(Sales[SalesAmount]), DATEADD(Calendar[Date], -1, MONTH))",
+              ")"
+            ],
+            "formatString": "0.00%;-0.00%;0.00%"
+          },
+          {
+            "name": "Profit Margin",
+            "expression": [
+              "",
+              "DIVIDE(",
+              "\tSUM(Sales[Profit]),",
+              "\tSUM(Sales[SalesAmount])",
+              "\t)"
+            ],
+            "formatString": "0.00%;-0.00%;0.00%"
+          },
+          {
+            "name": "Average Days Between Purchases",
+            "expression": [
+              "",
+              "AVERAGEX(",
+              "VALUES(Customers[CustomerKey]),",
+              "CALCULATE(",
+              "\tAVERAGE(Sales[Days Since Last Purchase])",
+              "\t)",
+              ")"
+            ],
+            "formatString": "#,0"
+          },
+          {
+            "name": "Order Count",
+            "expression": [
+              "",
+              "DISTINCTCOUNT(Sales[SalesOrderKey])"
+            ]
+          },
+          {
+            "name": "Repeat Purchase Rate",
+            "expression": [
+              "",
+              "DIVIDE(",
+              "\tCALCULATE(",
+              "\tDISTINCTCOUNT(",
+              "\tCustomers[CustomerKey]),",
+              "\tFILTER(",
+              "\tSales,",
+              "\tSales[Order Count_c] >1)),",
+              "\tDISTINCTCOUNT(Customers[CustomerKey])",
+              ")"
+            ],
+            "formatString": "0.00%;-0.00%;0.00%"
+          },
+          {
+            "name": "New Customers",
+            "expression": [
+              "",
+              "CALCULATE(",
+              "\tDISTINCTCOUNT(Customers[CustomerKey]),",
+              "\tFILTER(",
+              "\t         Sales,",
+              "\t         Sales[OrderDate] = ",
+              "\t               CALCULATE(",
+              "\t                      MIN(Sales[OrderDate]),",
+              "\t                      FILTER(",
+              "\t                                  sales,",
+              "\t                                  Sales[CustomerKey]=EARLIER(Sales[CustomerKey])",
+              "\t                      )",
+              "\t              ) &&",
+              "\t      Sales[OrderDate]>=MIN('Calendar'[Date]) &&",
+              "\t      Sales[OrderDate]<=MAX('Calendar'[Date])",
+              "\t      )",
+              "\t      )"
+            ]
+          },
+          {
+            "name": "Returning Customers",
+            "expression": [
+              "",
+              "CALCULATE(",
+              "\tDISTINCTCOUNT(Customers[CustomerKey]),",
+              "\tFILTER(",
+              "\tsales,",
+              "\tSales[OrderDate] >",
+              "\t\tCALCULATE(",
+              "\t\t\tMIN(Sales[OrderDate]),",
+              "\t\t\tFILTER(",
+              "\t\t\tsales,",
+              "\t\t\tSales[CustomerKey]=EARLIER(Sales[CustomerKey])",
+              "\t\t)",
+              "\t) &&",
+              "\tSales[OrderDate] >= MIN('Calendar'[Date]) &&",
+              "\tSales[OrderDate] <= MAX('Calendar'[Date])))"
+            ]
+          },
+          {
+            "name": "Active Customers Last Month",
+            "expression": [
+              " ",
+              "CALCULATE(",
+              "    DISTINCTCOUNT(Sales[CustomerKey]),",
+              "    FILTER(",
+              "        Sales,",
+              "        Sales[OrderDate] >= DATEADD(Calendar[Date], -1, MONTH) &&",
+              "        Sales[OrderDate] < MIN(Calendar[Date])",
+              "    )",
+              ")"
+            ]
+          },
+          {
+            "name": "Retained Customers",
+            "expression": [
+              " ",
+              "CALCULATE(",
+              "    DISTINCTCOUNT(Sales[CustomerKey]),",
+              "    FILTER(",
+              "        Sales,",
+              "        Sales[OrderDate] >= MIN(Calendar[Date]) &&",
+              "        Sales[OrderDate] <= MAX(Calendar[Date]) &&",
+              "        Sales[CustomerKey] IN",
+              "            CALCULATETABLE(",
+              "                VALUES(Sales[CustomerKey]),",
+              "                FILTER(",
+              "                    Sales,",
+              "                    Sales[OrderDate] >= DATEADD(Calendar[Date], -1, MONTH) &&",
+              "                    Sales[OrderDate] < MIN(Calendar[Date])",
+              "                )",
+              "            )",
+              "    )",
+              ")"
+            ]
+          },
+          {
+            "name": "Churn Rate",
+            "expression": [
+              " ",
+              "DIVIDE(",
+              "    [Active Customers Last Month] - [Retained Customers],",
+              "    [Active Customers Last Month]",
+              ")"
+            ]
+          },
+          {
+            "name": "Total Profit by Product",
+            "expression": [
+              " ",
+              "SUMX(",
+              "    FILTER(Sales, Sales[ProductKey] = RELATED(Products[ProductKey])),",
+              "    (RELATED(Products[ListPrice]) - RELATED(Products[StandardCost])) * Sales[OrderQuantity]",
+              ")"
+            ],
+            "formatString": "\\$#,0.00;(\\$#,0.00);\\$#,0.00",
+            "annotations": [
+              {
+                "name": "Format",
+                "value": "<Format Format=\"Currency\" Accuracy=\"2\"><Currency LCID=\"1033\" DisplayName=\"$ English (United States)\" Symbol=\"$\" PositivePattern=\"0\" NegativePattern=\"0\" /></Format>"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Products",
+        "columns": [
+          {
+            "name": "ProductKey",
+            "dataType": "string",
+            "sourceColumn": "ProductKey"
+          },
+          {
+            "name": "EnglishProductName",
+            "dataType": "string",
+            "sourceColumn": "EnglishProductName"
+          },
+          {
+            "name": "StandardCost",
+            "dataType": "decimal",
+            "sourceColumn": "StandardCost"
+          },
+          {
+            "name": "FinishedGoodsFlag",
+            "dataType": "boolean",
+            "sourceColumn": "FinishedGoodsFlag"
+          },
+          {
+            "name": "Color",
+            "dataType": "string",
+            "sourceColumn": "Color"
+          },
+          {
+            "name": "ListPrice",
+            "dataType": "decimal",
+            "sourceColumn": "ListPrice"
+          },
+          {
+            "name": "Size",
+            "dataType": "string",
+            "sourceColumn": "Size"
+          },
+          {
+            "name": "ProductLine",
+            "dataType": "string",
+            "sourceColumn": "ProductLine"
+          },
+          {
+            "name": "DealerPrice",
+            "dataType": "decimal",
+            "sourceColumn": "DealerPrice"
+          },
+          {
+            "name": "Class",
+            "dataType": "string",
+            "sourceColumn": "Class"
+          },
+          {
+            "name": "Style",
+            "dataType": "string",
+            "sourceColumn": "Style"
+          },
+          {
+            "name": "ModelName",
+            "dataType": "string",
+            "sourceColumn": "ModelName"
+          },
+          {
+            "name": "StartDate",
+            "dataType": "dateTime",
+            "sourceColumn": "StartDate"
+          },
+          {
+            "name": "EndDate",
+            "dataType": "dateTime",
+            "sourceColumn": "EndDate"
+          },
+          {
+            "name": "Status",
+            "dataType": "string",
+            "sourceColumn": "Status"
+          },
+          {
+            "name": "Subcategory",
+            "dataType": "string",
+            "sourceColumn": "Subcategory"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"File/C:\\Users\\tjturner\\OneDrive - Intel Corporation\\Desktop\\Test Project\\P3 Simu\",",
+                "    Products_Table = Source{[Item=\"Products\",Kind=\"Table\"]}[Data],",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(Products_Table,{{\"ProductKey\", type text}, {\"EnglishProductName\", type text}, {\"StandardCost\", Currency.Type}, {\"FinishedGoodsFlag\", type logical}, {\"Color\", type text}, {\"ListPrice\", Currency.Type}, {\"Size\", type text}, {\"ProductLine\", type text}, {\"DealerPrice\", Currency.Type}, {\"Class\", type text}, {\"Style\", type text}, {\"ModelName\", type text}, {\"StartDate\", type date}, {\"EndDate\", type date}, {\"Status\", type text}, {\"Subcategory\", type text}})",
+                "in",
+                "    #\"Changed Type\""
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "ProductCategories",
+        "columns": [
+          {
+            "name": "Subcategory",
+            "dataType": "string",
+            "sourceColumn": "Subcategory"
+          },
+          {
+            "name": "Category",
+            "dataType": "string",
+            "sourceColumn": "Category"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"File/C:\\Users\\tjturner\\OneDrive - Intel Corporation\\Desktop\\Test Project\\P3 Simu\",",
+                "    ProductCategories_Table = Source{[Item=\"ProductCategories\",Kind=\"Table\"]}[Data],",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(ProductCategories_Table,{{\"Subcategory\", type text}, {\"Category\", type text}})",
+                "in",
+                "    #\"Changed Type\""
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Customers",
+        "columns": [
+          {
+            "name": "CustomerKey",
+            "dataType": "string",
+            "sourceColumn": "CustomerKey"
+          },
+          {
+            "name": "AltCustomerKey",
+            "dataType": "string",
+            "sourceColumn": "AltCustomerKey"
+          },
+          {
+            "name": "FirstName",
+            "dataType": "string",
+            "sourceColumn": "FirstName"
+          },
+          {
+            "name": "LastName",
+            "dataType": "string",
+            "sourceColumn": "LastName"
+          },
+          {
+            "name": "CustromerName",
+            "dataType": "string",
+            "sourceColumn": "CustromerName"
+          },
+          {
+            "name": "BirthDate",
+            "dataType": "dateTime",
+            "sourceColumn": "BirthDate"
+          },
+          {
+            "name": "MaritalStatus",
+            "dataType": "string",
+            "sourceColumn": "MaritalStatus"
+          },
+          {
+            "name": "Gender",
+            "dataType": "string",
+            "sourceColumn": "Gender"
+          },
+          {
+            "name": "EmailAddress",
+            "dataType": "string",
+            "sourceColumn": "EmailAddress"
+          },
+          {
+            "name": "YearlyIncome",
+            "dataType": "decimal",
+            "sourceColumn": "YearlyIncome"
+          },
+          {
+            "name": "TotalChildren",
+            "dataType": "int64",
+            "sourceColumn": "TotalChildren"
+          },
+          {
+            "name": "EnglishEducation",
+            "dataType": "string",
+            "sourceColumn": "EnglishEducation"
+          },
+          {
+            "name": "EnglishOccupation",
+            "dataType": "string",
+            "sourceColumn": "EnglishOccupation"
+          },
+          {
+            "name": "HouseOwnerFlag",
+            "dataType": "int64",
+            "sourceColumn": "HouseOwnerFlag"
+          },
+          {
+            "name": "NumberCarsOwned",
+            "dataType": "int64",
+            "sourceColumn": "NumberCarsOwned"
+          },
+          {
+            "name": "AddressLine1",
+            "dataType": "string",
+            "sourceColumn": "AddressLine1"
+          },
+          {
+            "name": "DateFirstPurchase",
+            "dataType": "dateTime",
+            "sourceColumn": "DateFirstPurchase"
+          },
+          {
+            "name": "CommuteDistance",
+            "dataType": "string",
+            "sourceColumn": "CommuteDistance"
+          },
+          {
+            "type": "calculated",
+            "name": "Age Range",
+            "dataType": "string",
+            "isDataTypeInferred": true,
+            "expression": [
+              "",
+              "VAR Age = ",
+              "\tDATEDIFF(",
+              "\t\tCustomers[BirthDate], TODAY(), YEAR)",
+              "\t\tRETURN",
+              "\t\t\tSWITCH(",
+              "\t\t\t\tTRUE(),",
+              "\t\t\t\tAge < 18, \"Under 18\",",
+              "\t\t\t\tAge >= 18 && Age <= 25, \"18-25\",",
+              "\t\t\t\tAge >= 26 && Age <= 35, \"26-35\",",
+              "\t\t\t\tAge >= 36 && Age <= 50, \"36-50\",",
+              "\t\t\t\tAge >= 51 && Age <= 65, \"51-65\",",
+              "\t\t\t\tAge > 65, \"Over 65\",",
+              "\t\t\t\tBLANK()",
+              "\t\t\t)",
+              "\t\t"
+            ]
+          },
+          {
+            "type": "calculated",
+            "name": "Annual Income Range",
+            "dataType": "string",
+            "isDataTypeInferred": true,
+            "expression": [
+              " ",
+              "SWITCH(",
+              "    TRUE(),",
+              "    Customers[YearlyIncome] < 30000, \"Under $30,000\",",
+              "    Customers[YearlyIncome] >= 30000 && Customers[YearlyIncome] <= 50000, \"$30,000–$50,000\",",
+              "    Customers[YearlyIncome] > 50000 && Customers[YearlyIncome] <= 75000, \"$50,001–$75,000\",",
+              "    Customers[YearlyIncome] > 75000 && Customers[YearlyIncome] <= 100000, \"$75,001–$100,000\",",
+              "    Customers[YearlyIncome] > 100000, \"Over $100,000\",",
+              "    BLANK()",
+              ")"
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"File/C:\\Users\\tjturner\\OneDrive - Intel Corporation\\Desktop\\Test Project\\P3 Simu\",",
+                "    Customers_Table = Source{[Item=\"Customers\",Kind=\"Table\"]}[Data],",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(Customers_Table,{{\"CustomerKey\", type text}, {\"AltCustomerKey\", type text}, {\"FirstName\", type text}, {\"LastName\", type text}, {\"BirthDate\", type date}, {\"MaritalStatus\", type text}, {\"Gender\", type text}, {\"EmailAddress\", type text}, {\"YearlyIncome\", Currency.Type}, {\"TotalChildren\", Int64.Type}, {\"EnglishEducation\", type text}, {\"EnglishOccupation\", type text}, {\"HouseOwnerFlag\", Int64.Type}, {\"NumberCarsOwned\", Int64.Type}, {\"AddressLine1\", type text}, {\"DateFirstPurchase\", type date}, {\"CommuteDistance\", type text}}),",
+                "    #\"Added Custom\" = Table.AddColumn(#\"Changed Type\", \"CustromerName\", each [FirstName]&\" \"&[LastName]),",
+                "    #\"Changed Type1\" = Table.TransformColumnTypes(#\"Added Custom\",{{\"CustromerName\", type text}}),",
+                "    #\"Reordered Columns\" = Table.ReorderColumns(#\"Changed Type1\",{\"CustomerKey\", \"AltCustomerKey\", \"FirstName\", \"LastName\", \"CustromerName\", \"BirthDate\", \"MaritalStatus\", \"Gender\", \"EmailAddress\", \"YearlyIncome\", \"TotalChildren\", \"EnglishEducation\", \"EnglishOccupation\", \"HouseOwnerFlag\", \"NumberCarsOwned\", \"AddressLine1\", \"DateFirstPurchase\", \"CommuteDistance\"})",
+                "in",
+                "    #\"Reordered Columns\""
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Calendar",
+        "columns": [
+          {
+            "name": "Date",
+            "dataType": "dateTime",
+            "sourceColumn": "Date",
+            "formatString": "Short Date",
+            "annotations": [
+              {
+                "name": "Format",
+                "value": "<Format Format=\"DateTimeShortDatePattern\" />"
+              }
+            ]
+          },
+          {
+            "name": "Year",
+            "dataType": "string",
+            "sourceColumn": "Year"
+          },
+          {
+            "name": "Month",
+            "dataType": "string",
+            "sourceColumn": "Month"
+          },
+          {
+            "name": "Year Month",
+            "dataType": "string",
+            "sourceColumn": "Year Month"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText(\"i45WMtQ31DcyMDBQio0FAA==\", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [#\"Start Date\" = _t]),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(Source,{{\"Start Date\", type date}}),",
+                "    #\"Added Custom\" = Table.AddColumn(#\"Changed Type\", \"EndDate\", each Date.From(DateTime.LocalNow())),",
+                "    #\"Changed Type1\" = Table.TransformColumnTypes(#\"Added Custom\",{{\"EndDate\", type date}}),",
+                "    #\"Added Custom1\" = Table.AddColumn(#\"Changed Type1\", \"Date\", each {Number.From([Start Date])..Number.From([EndDate])}),",
+                "    #\"Expanded Date\" = Table.ExpandListColumn(#\"Added Custom1\", \"Date\"),",
+                "    #\"Changed Type2\" = Table.TransformColumnTypes(#\"Expanded Date\",{{\"Date\", type date}}),",
+                "    #\"Removed Other Columns\" = Table.SelectColumns(#\"Changed Type2\",{\"Date\"}),",
+                "    #\"Duplicated Column\" = Table.DuplicateColumn(#\"Removed Other Columns\", \"Date\", \"Date - Copy\"),",
+                "    #\"Extracted Year\" = Table.TransformColumns(#\"Duplicated Column\",{{\"Date - Copy\", Date.Year, Int64.Type}}),",
+                "    #\"Duplicated Column1\" = Table.DuplicateColumn(#\"Extracted Year\", \"Date\", \"Date - Copy.1\"),",
+                "    #\"Extracted Month\" = Table.TransformColumns(#\"Duplicated Column1\",{{\"Date - Copy.1\", Date.Month, Int64.Type}}),",
+                "    #\"Changed Type3\" = Table.TransformColumnTypes(#\"Extracted Month\",{{\"Date - Copy\", type text}, {\"Date - Copy.1\", type text}}),",
+                "    #\"Renamed Columns\" = Table.RenameColumns(#\"Changed Type3\",{{\"Date - Copy\", \"Year\"}, {\"Date - Copy.1\", \"Month\"}}),",
+                "    #\"Inserted Prefix\" = Table.AddColumn(#\"Renamed Columns\", \"Prefix\", each \"0\" & [Month], type text),",
+                "    #\"Inserted Last Characters\" = Table.AddColumn(#\"Inserted Prefix\", \"Last Characters\", each Text.End([Prefix], 2), type text),",
+                "    #\"Removed Columns\" = Table.RemoveColumns(#\"Inserted Last Characters\",{\"Month\", \"Prefix\"}),",
+                "    #\"Added Custom2\" = Table.AddColumn(#\"Removed Columns\", \"Year Month\", each [Year]&\"-\"&[Last Characters]),",
+                "    #\"Renamed Columns1\" = Table.RenameColumns(#\"Added Custom2\",{{\"Last Characters\", \"Month\"}})",
+                "in",
+                "    #\"Renamed Columns1\""
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "name": "f76ef246-8ce1-47a1-8c1d-a53b6b58338d",
+        "fromTable": "Sales",
+        "fromColumn": "OrderDate",
+        "toTable": "Calendar",
+        "toColumn": "Date"
+      },
+      {
+        "name": "affe0304-94e6-4724-b174-5a676607d28b",
+        "fromTable": "Sales",
+        "fromColumn": "ProductKey",
+        "toTable": "Products",
+        "toColumn": "ProductKey"
+      },
+      {
+        "name": "96341582-692c-4424-bf78-0c58a76ea7e0",
+        "fromTable": "Products",
+        "fromColumn": "Subcategory",
+        "toTable": "ProductCategories",
+        "toColumn": "Subcategory"
+      },
+      {
+        "name": "a983c6f1-db8a-485d-86d3-e4990811abb9",
+        "fromTable": "Sales",
+        "fromColumn": "CustomerKey",
+        "toTable": "Customers",
+        "toColumn": "AltCustomerKey"
+      }
+    ],
+    "annotations": [
+      {
+        "name": "ClientCompatibilityLevel",
+        "value": "600"
+      }
+    ]
+  },
+  "id": "SemanticModel"
+}
