@@ -16,7 +16,9 @@
           "query": null
         },
         "credential": {
-          "AuthenticationKind": "ServiceAccount"
+          "AuthenticationKind": "ServiceAccount",
+          "kind": "File",
+          "path": "c:\\users\\tuko3\\onedrive\\documents\\job stuff\\p3 adaptive simulation\\p3 simulated consulting project.xlsx"
         },
         "contextExpression": [
           "let",
@@ -188,7 +190,7 @@
               "type": "m",
               "expression": [
                 "let",
-                "    Source = #\"File/C:\\Users\\tjturner\\OneDrive - Intel Corporation\\Desktop\\Test Project\\P3 Simu\",",
+                "    Source = #\"Excel Workbook_BikeShopSales\",",
                 "    Sales_Table = Source{[Item=\"Sales\",Kind=\"Table\"]}[Data],",
                 "    #\"Changed Type\" = Table.TransformColumnTypes(Sales_Table,{{\"ProductKey\", type text}, {\"OrderDate\", type date}, {\"CustomerKey\", type text}, {\"SalesTerritoryKey\", type text}, {\"SalesOrderNumber\", type text}, {\"SalesOrderLineNumber\", type text}, {\"OrderQuantity\", Int64.Type}, {\"DiscountAmount\", Int64.Type}, {\"ProductStandardCost\", Currency.Type}, {\"SalesAmount\", Currency.Type}, {\"Territories.Region\", type text}, {\"Territories.Country\", type text}, {\"Territories.Continent\", type text}}),",
                 "    #\"Added Custom\" = Table.AddColumn(#\"Changed Type\", \"SalesOrderKey\", each [SalesOrderNumber]&\"-\"&[SalesOrderLineNumber]),",
@@ -533,7 +535,7 @@
               "type": "m",
               "expression": [
                 "let",
-                "    Source = #\"File/C:\\Users\\tjturner\\OneDrive - Intel Corporation\\Desktop\\Test Project\\P3 Simu\",",
+                "    Source = #\"Excel Workbook_BikeShopSales\",",
                 "    Products_Table = Source{[Item=\"Products\",Kind=\"Table\"]}[Data],",
                 "    #\"Changed Type\" = Table.TransformColumnTypes(Products_Table,{{\"ProductKey\", type text}, {\"EnglishProductName\", type text}, {\"StandardCost\", Currency.Type}, {\"FinishedGoodsFlag\", type logical}, {\"Color\", type text}, {\"ListPrice\", Currency.Type}, {\"Size\", type text}, {\"ProductLine\", type text}, {\"DealerPrice\", Currency.Type}, {\"Class\", type text}, {\"Style\", type text}, {\"ModelName\", type text}, {\"StartDate\", type date}, {\"EndDate\", type date}, {\"Status\", type text}, {\"Subcategory\", type text}})",
                 "in",
@@ -565,7 +567,7 @@
               "type": "m",
               "expression": [
                 "let",
-                "    Source = #\"File/C:\\Users\\tjturner\\OneDrive - Intel Corporation\\Desktop\\Test Project\\P3 Simu\",",
+                "    Source = #\"Excel Workbook_BikeShopSales\",",
                 "    ProductCategories_Table = Source{[Item=\"ProductCategories\",Kind=\"Table\"]}[Data],",
                 "    #\"Changed Type\" = Table.TransformColumnTypes(ProductCategories_Table,{{\"Subcategory\", type text}, {\"Category\", type text}})",
                 "in",
@@ -661,7 +663,14 @@
           {
             "name": "DateFirstPurchase",
             "dataType": "dateTime",
-            "sourceColumn": "DateFirstPurchase"
+            "sourceColumn": "DateFirstPurchase",
+            "formatString": "Short Date",
+            "annotations": [
+              {
+                "name": "Format",
+                "value": "<Format Format=\"DateTimeShortDatePattern\" />"
+              }
+            ]
           },
           {
             "name": "CommuteDistance",
@@ -709,6 +718,40 @@
               "    BLANK()",
               ")"
             ]
+          },
+          {
+            "type": "calculated",
+            "name": "SecondPurchaseDate",
+            "dataType": "dateTime",
+            "isDataTypeInferred": true,
+            "expression": [
+              "",
+              "VAR CustomerID = Customers[CustomerKey]",
+              "VAR PurchaseDates =",
+              "    FILTER(",
+              "        Sales,",
+              "        Sales[CustomerKey] = CustomerID",
+              "    )",
+              "VAR SortedDates =",
+              "    ADDCOLUMNS(",
+              "        PurchaseDates,",
+              "        \"Order Date\", Sales[OrderDate]",
+              "    )",
+              "VAR SecondDate =",
+              "    MINX(",
+              "        FILTER(",
+              "            SortedDates,",
+              "            Sales[OrderDate] >",
+              "                CALCULATE(",
+              "                    MIN(Sales[OrderDate]),",
+              "                    FILTER(Sales, Sales[CustomerKey] = CustomerID)",
+              "                )",
+              "        ),",
+              "        Sales[OrderDate]",
+              "    )",
+              "RETURN",
+              "    SecondDate"
+            ]
           }
         ],
         "partitions": [
@@ -719,7 +762,7 @@
               "type": "m",
               "expression": [
                 "let",
-                "    Source = #\"File/C:\\Users\\tjturner\\OneDrive - Intel Corporation\\Desktop\\Test Project\\P3 Simu\",",
+                "    Source = #\"Excel Workbook_BikeShopSales\",",
                 "    Customers_Table = Source{[Item=\"Customers\",Kind=\"Table\"]}[Data],",
                 "    #\"Changed Type\" = Table.TransformColumnTypes(Customers_Table,{{\"CustomerKey\", type text}, {\"AltCustomerKey\", type text}, {\"FirstName\", type text}, {\"LastName\", type text}, {\"BirthDate\", type date}, {\"MaritalStatus\", type text}, {\"Gender\", type text}, {\"EmailAddress\", type text}, {\"YearlyIncome\", Currency.Type}, {\"TotalChildren\", Int64.Type}, {\"EnglishEducation\", type text}, {\"EnglishOccupation\", type text}, {\"HouseOwnerFlag\", Int64.Type}, {\"NumberCarsOwned\", Int64.Type}, {\"AddressLine1\", type text}, {\"DateFirstPurchase\", type date}, {\"CommuteDistance\", type text}}),",
                 "    #\"Added Custom\" = Table.AddColumn(#\"Changed Type\", \"CustromerName\", each [FirstName]&\" \"&[LastName]),",
@@ -800,20 +843,6 @@
     ],
     "relationships": [
       {
-        "name": "f76ef246-8ce1-47a1-8c1d-a53b6b58338d",
-        "fromTable": "Sales",
-        "fromColumn": "OrderDate",
-        "toTable": "Calendar",
-        "toColumn": "Date"
-      },
-      {
-        "name": "affe0304-94e6-4724-b174-5a676607d28b",
-        "fromTable": "Sales",
-        "fromColumn": "ProductKey",
-        "toTable": "Products",
-        "toColumn": "ProductKey"
-      },
-      {
         "name": "96341582-692c-4424-bf78-0c58a76ea7e0",
         "fromTable": "Products",
         "fromColumn": "Subcategory",
@@ -826,6 +855,21 @@
         "fromColumn": "CustomerKey",
         "toTable": "Customers",
         "toColumn": "AltCustomerKey"
+      },
+      {
+        "name": "42a1c735-058e-4f4f-8618-d2513c644bc2",
+        "fromTable": "Sales",
+        "fromColumn": "ProductKey",
+        "toTable": "Products",
+        "toColumn": "ProductKey",
+        "crossFilteringBehavior": "bothDirections"
+      },
+      {
+        "name": "8a793fec-7452-4641-a9e5-b6e67c9a7f5a",
+        "fromTable": "Customers",
+        "fromColumn": "DateFirstPurchase",
+        "toTable": "Calendar",
+        "toColumn": "Date"
       }
     ],
     "annotations": [
